@@ -435,6 +435,11 @@ document.getElementById('share-all-btn').addEventListener('click', async () => {
   }
 });
 
+document.getElementById('new-list-btn').addEventListener('click', () => {
+  document.getElementById('url-input').value = '';
+  showInputView();
+});
+
 document.getElementById('back-btn').addEventListener('click', showInputView);
 
 window.addEventListener('load', () => {
