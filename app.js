@@ -269,9 +269,18 @@ function stopIframe(index) {
   if (!block) return;
   const iframe = block.querySelector('iframe');
   if (!iframe) return;
-  const src = iframe.src;
-  iframe.src = '';
-  iframe.src = src;
+  if (iframe.src.includes('soundcloud.com')) {
+    // use SoundCloud Widget API to pause
+    try {
+      const widget = SC.Widget(iframe);
+      widget.pause();
+    } catch {}
+  } else {
+    // src reset for YouTube and Spotify
+    const src = iframe.src;
+    iframe.src = '';
+    iframe.src = src;
+  }
 }
 
 function autoplaylframe(index) {
@@ -349,6 +358,20 @@ document.getElementById('prev-btn').addEventListener('click', () => {
 
 document.getElementById('next-btn').addEventListener('click', () => {
   if (activeIndex < totalTracks - 1) setActiveTrack(activeIndex + 1);
+});
+
+// detect when user clicks inside an iframe and update nav bar
+window.addEventListener('blur', () => {
+  const focused = document.activeElement;
+  if (!focused || focused.tagName !== 'IFRAME') return;
+  // find which block this iframe belongs to
+  for (let j = 0; j < totalTracks; j++) {
+    const block = document.getElementById(`block-${j}`);
+    if (block && block.contains(focused) && j !== activeIndex) {
+      setActiveTrack(j);
+      break;
+    }
+  }
 });
 
 // --- View switching ---
