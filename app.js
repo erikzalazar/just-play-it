@@ -286,12 +286,22 @@ function autoplaylframe(index) {
   const block = document.getElementById(`block-${index}`);
   if (!block) return;
   const iframe = block.querySelector('iframe');
-  const autoHtml = buildAutoplayEmbedHtml(activeParsedList[index]);
-  if (iframe && autoHtml) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = autoHtml;
-    const newIframe = tmp.firstElementChild;
-    iframe.replaceWith(newIframe);
+  if (!iframe) return;
+
+  const parsed = activeParsedList[index];
+
+  if (parsed.platform === 'youtube') {
+    iframe.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*'
+    );
+  } else if (parsed.platform === 'soundcloud') {
+    try { SC.Widget(iframe).play(); } catch {}
+  } else if (parsed.platform === 'spotify') {
+    // Spotify needs a full reload with autoplay=1 — no postMessage play API
+    const type = parsed.type || 'track';
+    const height = type === 'track' ? 152 : 352;
+    iframe.src = `https://open.spotify.com/embed/${type}/${parsed.id}?utm_source=generator&autoplay=1`;
+    iframe.height = height;
   }
 }
 
