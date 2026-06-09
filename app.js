@@ -276,11 +276,8 @@ function stopIframe(index) {
     iframe.contentWindow.postMessage(
       JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*'
     );
-  } else {
-    // Spotify — src reset is the only option
-    const src = iframe.src;
-    iframe.src = '';
-    iframe.src = src;
+  } else if (iframe.src.includes('spotify.com')) {
+    iframe.contentWindow.postMessage({ command: 'pause' }, 'https://open.spotify.com');
   }
 }
 
