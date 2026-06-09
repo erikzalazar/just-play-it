@@ -270,14 +270,8 @@ function stopIframe(index) {
   const iframe = block.querySelector('iframe');
   if (!iframe) return;
   const src = iframe.src;
-  // use postMessage to pause without reloading
-  if (src.includes('youtube.com')) {
-    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-  } else if (src.includes('spotify.com')) {
-    iframe.contentWindow.postMessage({ command: 'pause' }, '*');
-  } else if (src.includes('soundcloud.com')) {
-    iframe.contentWindow.postMessage(JSON.stringify({ method: 'pause' }), '*');
-  }
+  iframe.src = '';
+  iframe.src = src;
 }
 
 function autoplaylframe(index) {
