@@ -269,14 +269,15 @@ function stopIframe(index) {
   if (!block) return;
   const iframe = block.querySelector('iframe');
   if (!iframe) return;
+
   if (iframe.src.includes('soundcloud.com')) {
-    // use SoundCloud Widget API to pause
-    try {
-      const widget = SC.Widget(iframe);
-      widget.pause();
-    } catch {}
+    try { SC.Widget(iframe).pause(); } catch {}
+  } else if (iframe.src.includes('youtube.com')) {
+    iframe.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*'
+    );
   } else {
-    // src reset for YouTube and Spotify
+    // Spotify — src reset is the only option
     const src = iframe.src;
     iframe.src = '';
     iframe.src = src;
