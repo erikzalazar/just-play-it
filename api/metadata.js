@@ -35,17 +35,21 @@ export default async function handler(req, res) {
     let title = data.title;
     let author = data.author_name || null;
 
-    // Spotify doesn't return author_name — extract from iframe title attribute
-    if (platform === 'spotify' && !author && data.html) {
-      const match = data.html.match(/title="Spotify Embed: ([^"]+)"/);
-      if (match) {
-        // iframe title is "TrackTitle" or "Artist - TrackTitle"
-        const parts = match[1].split(' - ');
-        if (parts.length >= 2) {
-          title = parts.slice(1).join(' - ').trim();
-          author = parts[0].trim();
+    // Spotify oEmbed has no artist — fetch the track page and scrape og:description
+    if (platform === 'spotify' && !author) {
+      try {
+        const pageRes = await fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; just-play-it/1.0)' }
+        });
+        const html = await pageRes.text();
+        // og:description is typically "Artist · Song · Year"
+        const metaMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
+        if (metaMatch) {
+          const desc = metaMatch[1];
+          const parts = desc.split(' · ');
+          if (parts.length >= 1) author = parts[0].trim();
         }
-      }
+      } catch {}
     }
 
     return res.status(200).json({ title, author });
