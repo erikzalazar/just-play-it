@@ -50,22 +50,6 @@ function parseUrl(url) {
 async function fetchMetadata(parsed) {
   const supported = ['youtube', 'spotify', 'soundcloud'];
   if (!supported.includes(parsed.platform)) return null;
-
-  // try Spotify oEmbed via CORS proxy
-  if (parsed.platform === 'spotify') {
-    try {
-      const target = `https://open.spotify.com/oembed?url=${encodeURIComponent(parsed.original)}`;
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(target)}`);
-      if (!res.ok) throw new Error();
-      const wrapper = await res.json();
-      const data = JSON.parse(wrapper.contents);
-      return { artist: data.author_name, title: data.title };
-    } catch {
-      return null;
-    }
-  }
-
-  // YouTube and SoundCloud go through Netlify function
   try {
     const res = await fetch(
       `/.netlify/functions/metadata?url=${encodeURIComponent(parsed.original)}&platform=${parsed.platform}`
