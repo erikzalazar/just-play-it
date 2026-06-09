@@ -18,10 +18,19 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'unsupported platform' });
     }
 
-    const response = await fetch(oembedUrl);
-    if (!response.ok) throw new Error(`oembed fetch failed: ${response.status}`);
-    const data = await response.json();
+    const response = await fetch(oembedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; just-play-it/1.0)',
+        'Accept': 'application/json'
+      }
+    });
 
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(500).json({ error: `oembed ${response.status}`, detail: text.slice(0, 200) });
+    }
+
+    const data = await response.json();
     return res.status(200).json({ title: data.title, author: data.author_name });
   } catch (e) {
     return res.status(500).json({ error: e.message });
