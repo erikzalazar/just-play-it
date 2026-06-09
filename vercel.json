@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/.netlify/functions/metadata", "destination": "/api/metadata" }
+  ]
+}
