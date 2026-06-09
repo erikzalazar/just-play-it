@@ -67,12 +67,12 @@ async function fetchMetadata(parsed) {
 function buildEmbedHtml(parsed) {
   switch (parsed.platform) {
     case 'youtube':
-      return `<iframe height="315" src="https://www.youtube.com/embed/${parsed.id}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+      return `<iframe height="315" src="https://www.youtube.com/embed/${parsed.id}?enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 
     case 'spotify': {
       const type = parsed.type || 'track';
       const height = type === 'track' ? 152 : 352;
-      return `<iframe height="${height}" src="https://open.spotify.com/embed/${type}/${parsed.id}?utm_source=generator" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+      return `<iframe height="${height}" src="https://open.spotify.com/embed/${type}/${parsed.id}?utm_source=generator" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
     }
 
     case 'soundcloud': {
@@ -268,10 +268,15 @@ function stopIframe(index) {
   const block = document.getElementById(`block-${index}`);
   if (!block) return;
   const iframe = block.querySelector('iframe');
-  if (iframe) {
-    const src = iframe.src;
-    iframe.src = '';
-    iframe.src = src;
+  if (!iframe) return;
+  const src = iframe.src;
+  // use postMessage to pause without reloading
+  if (src.includes('youtube.com')) {
+    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+  } else if (src.includes('spotify.com')) {
+    iframe.contentWindow.postMessage({ command: 'pause' }, '*');
+  } else if (src.includes('soundcloud.com')) {
+    iframe.contentWindow.postMessage(JSON.stringify({ method: 'pause' }), '*');
   }
 }
 
