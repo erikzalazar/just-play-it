@@ -50,6 +50,22 @@ function parseUrl(url) {
 async function fetchMetadata(parsed) {
   const supported = ['youtube', 'spotify', 'soundcloud'];
   if (!supported.includes(parsed.platform)) return null;
+
+  // try Spotify oEmbed via CORS proxy
+  if (parsed.platform === 'spotify') {
+    try {
+      const target = `https://open.spotify.com/oembed?url=${encodeURIComponent(parsed.original)}`;
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(target)}`);
+      if (!res.ok) throw new Error();
+      const wrapper = await res.json();
+      const data = JSON.parse(wrapper.contents);
+      return { artist: data.author_name, title: data.title };
+    } catch {
+      return null;
+    }
+  }
+
+  // YouTube and SoundCloud go through Netlify function
   try {
     const res = await fetch(
       `/.netlify/functions/metadata?url=${encodeURIComponent(parsed.original)}&platform=${parsed.platform}`
@@ -129,11 +145,14 @@ function renderPlayers(parsedList) {
       <span class="tracklist-title" id="tmeta-${i}"><span class="loading">loading...</span></span>
       <span class="tracklist-platform">${parsed.platform}</span>
     `;
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => setActiveTrack(i));
     tracklistEl.appendChild(row);
 
     // --- Player block ---
     const block = document.createElement('div');
     block.className = 'player-block';
+    block.id = `block-${i}`;
     block.innerHTML = `
       <div class="player-label">
         <span class="player-label-title" id="pmeta-${i}"><span class="loading">loading...</span></span>
@@ -144,7 +163,7 @@ function renderPlayers(parsedList) {
       </div>
       ${embedHtml}
       <div class="player-footer">
-        <a class="open-btn" href="${parsed.original}" target="_blank" rel="noopener noreferrer">♡ like on ${parsed.platform} ↗</a>
+        <a class="open-btn" href="${parsed.original}" target="_blank" rel="noopener noreferrer" title="open on ${parsed.platform} to save">♡</a>
       </div>
     `;
     playersEl.appendChild(block);
@@ -167,16 +186,22 @@ function renderPlayers(parsedList) {
     block.textContent = `unsupported: ${parsed.original}`;
     playersEl.appendChild(block);
   });
+
+  const validCount = parsedList.filter(p => p && p.platform !== 'unknown' && buildEmbedHtml(p)).length;
+  if (validCount > 0) initNavBar(validCount);
 }
 
 // --- Shareable URL encoding ---
 
 function encodeLinks(urls) {
-  return btoa(unescape(encodeURIComponent(urls.join('\n'))));
+  return LZString.compressToEncodedURIComponent(urls.join('\n'));
 }
 
 function decodeLinks(encoded) {
   try {
+    // support both new (lz-string) and old (btoa) format
+    const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
+    if (decompressed) return decompressed.split('\n').filter(Boolean);
     return decodeURIComponent(escape(atob(encoded))).split('\n').filter(Boolean);
   } catch {
     return [];
@@ -188,24 +213,87 @@ function buildShareUrl(urls) {
   return `${location.origin}${location.pathname}#${hash}`;
 }
 
+async function shortenUrl(longUrl) {
+  try {
+    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const short = (await res.text()).trim();
+    if (short.startsWith('https://tinyurl.com/')) return short;
+    throw new Error(`unexpected response: ${short}`);
+  } catch (e) {
+    console.warn('shortening failed:', e.message);
+    return longUrl;
+  }
+}
+
 // --- Copy button ---
 
-function setupCopyButton(shareUrl) {
+function setupCopyButton(longUrl) {
   const btn = document.getElementById('copy-btn');
   const display = document.getElementById('share-url');
-  display.textContent = shareUrl;
+  display.textContent = 'shortening...';
 
-  btn.onclick = () => {
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      btn.textContent = 'copied ✓';
-      btn.classList.add('copied');
-      setTimeout(() => {
-        btn.textContent = 'copy link';
-        btn.classList.remove('copied');
-      }, 2000);
-    });
-  };
+  shortenUrl(longUrl).then(shortUrl => {
+    display.textContent = shortUrl;
+    btn.onclick = () => {
+      navigator.clipboard.writeText(shortUrl).then(() => {
+        btn.textContent = 'copied ✓';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'copy link';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    };
+  });
 }
+
+// --- Now playing nav ---
+
+let activeIndex = 0;
+let totalTracks = 0;
+
+function setActiveTrack(i) {
+  // remove previous active
+  const prevBlock = document.getElementById(`block-${activeIndex}`);
+  const prevRow = document.getElementById(`trow-${activeIndex}`);
+  if (prevBlock) prevBlock.classList.remove('active');
+  if (prevRow) prevRow.classList.remove('active');
+
+  activeIndex = i;
+
+  const block = document.getElementById(`block-${i}`);
+  const row = document.getElementById(`trow-${i}`);
+  if (block) {
+    block.classList.add('active');
+    block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  if (row) row.classList.add('active');
+
+  // update label
+  const metaEl = document.getElementById(`tmeta-${i}`);
+  const label = metaEl ? metaEl.textContent : `track ${String(i + 1).padStart(2, '0')}`;
+  document.getElementById('now-playing-label').textContent =
+    `${String(i + 1).padStart(2, '0')}  ${label}`;
+
+  document.getElementById('prev-btn').disabled = i === 0;
+  document.getElementById('next-btn').disabled = i === totalTracks - 1;
+}
+
+function initNavBar(count) {
+  totalTracks = count;
+  activeIndex = 0;
+  document.getElementById('now-playing-bar').classList.remove('hidden');
+  setActiveTrack(0);
+}
+
+document.getElementById('prev-btn').addEventListener('click', () => {
+  if (activeIndex > 0) setActiveTrack(activeIndex - 1);
+});
+
+document.getElementById('next-btn').addEventListener('click', () => {
+  if (activeIndex < totalTracks - 1) setActiveTrack(activeIndex + 1);
+});
 
 // --- View switching ---
 
@@ -226,6 +314,7 @@ function showPlayerView(urls) {
 
 function showInputView() {
   document.getElementById('player-view').classList.add('hidden');
+  document.getElementById('now-playing-bar').classList.add('hidden');
   document.getElementById('input-view').classList.remove('hidden');
   history.replaceState(null, '', location.pathname);
 }
@@ -239,13 +328,16 @@ document.getElementById('generate-btn').addEventListener('click', () => {
   showPlayerView(urls);
 });
 
-document.getElementById('share-all-btn').addEventListener('click', () => {
-  const shareUrl = buildShareUrl(currentUrls);
+document.getElementById('share-all-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('share-all-btn');
+  btn.textContent = 'shortening...';
+  const longUrl = buildShareUrl(currentUrls);
+  const shortUrl = await shortenUrl(longUrl);
   if (navigator.share) {
-    navigator.share({ title: 'just play it', url: shareUrl });
+    navigator.share({ title: 'just play it', url: shortUrl });
+    btn.textContent = 'share this playlist';
   } else {
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      const btn = document.getElementById('share-all-btn');
+    navigator.clipboard.writeText(shortUrl).then(() => {
       btn.textContent = 'link copied ✓';
       btn.classList.add('copied');
       setTimeout(() => {

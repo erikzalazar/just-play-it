@@ -314,15 +314,14 @@ button {
 
 .open-btn {
   font-family: inherit;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
+  font-size: 1.1rem;
   color: var(--accent);
   text-decoration: none;
-  text-transform: lowercase;
   border: 1px solid var(--accent-dim);
-  padding: 0.35rem 0.85rem;
+  padding: 0.3rem 0.7rem;
   border-radius: var(--radius);
   transition: background 0.2s, color 0.2s;
+  line-height: 1;
 }
 
 .open-btn:hover {
@@ -359,6 +358,76 @@ button {
 
 .hidden {
   display: none;
+}
+
+/* --- now playing bar --- */
+
+#now-playing-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #111;
+  border-top: 1px solid var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 0.85rem 1rem;
+  z-index: 100;
+}
+
+#now-playing-bar.hidden {
+  display: none;
+}
+
+#now-playing-label {
+  font-size: 0.8rem;
+  color: var(--text);
+  letter-spacing: 0.1em;
+  min-width: 200px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#prev-btn, #next-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#prev-btn:hover, #next-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+}
+
+#prev-btn:disabled, #next-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.player-block.active {
+  border-color: var(--accent);
+}
+
+.tracklist-row.active .tracklist-num,
+.tracklist-row.active .tracklist-title {
+  color: var(--accent);
+}
+
+/* extra bottom padding so last player isn't hidden behind the bar */
+#players {
+  padding-bottom: 4rem;
 }
 
 /* --- mobile --- */
