@@ -264,40 +264,40 @@ function buildAutoplayEmbedHtml(parsed) {
   }
 }
 
-function stopOtherIframes(exceptIndex) {
-  for (let j = 0; j < totalTracks; j++) {
-    if (j === exceptIndex) continue;
-    const block = document.getElementById(`block-${j}`);
-    if (!block) continue;
-    const iframe = block.querySelector('iframe');
-    if (iframe) {
-      const src = iframe.src;
-      iframe.src = '';
-      iframe.src = src;
-    }
+function stopIframe(index) {
+  const block = document.getElementById(`block-${index}`);
+  if (!block) return;
+  const iframe = block.querySelector('iframe');
+  if (iframe) {
+    const src = iframe.src;
+    iframe.src = '';
+    iframe.src = src;
   }
+}
 
-  // if autoplay is on, reload the active iframe with autoplay param
-  if (autoplay && activeParsedList[exceptIndex]) {
-    const block = document.getElementById(`block-${exceptIndex}`);
-    if (block) {
-      const iframe = block.querySelector('iframe');
-      const autoHtml = buildAutoplayEmbedHtml(activeParsedList[exceptIndex]);
-      if (iframe && autoHtml) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = autoHtml;
-        const newIframe = tmp.firstElementChild;
-        iframe.replaceWith(newIframe);
-      }
-    }
+function autoplaylframe(index) {
+  if (!activeParsedList[index]) return;
+  const block = document.getElementById(`block-${index}`);
+  if (!block) return;
+  const iframe = block.querySelector('iframe');
+  const autoHtml = buildAutoplayEmbedHtml(activeParsedList[index]);
+  if (iframe && autoHtml) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = autoHtml;
+    const newIframe = tmp.firstElementChild;
+    iframe.replaceWith(newIframe);
   }
 }
 
 function setActiveTrack(i) {
-  const prevBlock = document.getElementById(`block-${activeIndex}`);
-  const prevRow = document.getElementById(`trow-${activeIndex}`);
+  const prevIndex = activeIndex;
+  const prevBlock = document.getElementById(`block-${prevIndex}`);
+  const prevRow = document.getElementById(`trow-${prevIndex}`);
   if (prevBlock) prevBlock.classList.remove('active');
   if (prevRow) prevRow.classList.remove('active');
+
+  // stop only the previous track
+  if (i !== prevIndex) stopIframe(prevIndex);
 
   activeIndex = i;
 
@@ -325,7 +325,8 @@ function setActiveTrack(i) {
   document.getElementById('prev-btn').disabled = i === 0;
   document.getElementById('next-btn').disabled = i === totalTracks - 1;
 
-  stopOtherIframes(i);
+  // autoplay the new track if enabled
+  if (autoplay && i !== prevIndex) autoplaylframe(i);
 }
 
 function initNavBar(parsedList) {
