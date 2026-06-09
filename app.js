@@ -152,13 +152,20 @@ function renderPlayers(parsedList) {
     `;
     playersEl.appendChild(block);
 
-    // Fetch metadata and update both tracklist + player label
+    // Fetch metadata and update tracklist, player label, and nav bar if active
     fetchMetadata(parsed).then(meta => {
       const tEl = document.getElementById(`tmeta-${i}`);
       const pEl = document.getElementById(`pmeta-${i}`);
       const html = labelHtml(meta, parsed.platform, parsed.original);
       if (tEl) tEl.innerHTML = html;
       if (pEl) pEl.innerHTML = html;
+
+      // update nav bar if this is the currently active track
+      if (i === activeIndex) {
+        const label = tEl ? tEl.textContent : `track ${String(i + 1).padStart(2, '0')}`;
+        document.getElementById('now-playing-label').textContent =
+          `${String(i + 1).padStart(2, '0')}  ${label}`;
+      }
     });
   });
 
