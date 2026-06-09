@@ -435,6 +435,27 @@ document.getElementById('share-all-btn').addEventListener('click', async () => {
   }
 });
 
+document.getElementById('copy-list-btn').addEventListener('click', () => {
+  const rows = [];
+  for (let i = 0; i < totalTracks; i++) {
+    const el = document.getElementById(`tmeta-${i}`);
+    const text = el ? el.textContent.trim() : '';
+    if (text && text !== 'loading...') {
+      rows.push(`${String(i + 1).padStart(2, '0')}  ${text}`);
+    }
+  }
+  if (rows.length === 0) return;
+  navigator.clipboard.writeText(rows.join('\n')).then(() => {
+    const btn = document.getElementById('copy-list-btn');
+    btn.textContent = 'tracklist copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'copy tracklist';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+});
+
 document.getElementById('new-list-btn').addEventListener('click', () => {
   document.getElementById('url-input').value = '';
   showInputView();

@@ -129,6 +129,29 @@ button {
   color: #8acd8a;
 }
 
+#copy-list-btn {
+  width: 100%;
+  padding: 0.65rem;
+  margin-bottom: 1rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: lowercase;
+  letter-spacing: 0.1em;
+}
+
+#copy-list-btn:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+#copy-list-btn.copied {
+  background: #2a4a2a;
+  border-color: #4a8a4a;
+  color: #8acd8a;
+}
+
 /* --- share bar --- */
 
 #share-bar {
