@@ -408,6 +408,27 @@ button {
   color: var(--bg);
 }
 
+#autoplay-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+
+#autoplay-btn.on {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+#autoplay-btn:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
 #prev-btn, #next-btn {
   background: transparent;
   border: 1px solid var(--border);

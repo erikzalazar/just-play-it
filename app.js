@@ -244,6 +244,25 @@ function setupCopyButton(longUrl) {
 let activeIndex = 0;
 let totalTracks = 0;
 let activeParsedList = [];
+let autoplay = false;
+
+function buildAutoplayEmbedHtml(parsed) {
+  switch (parsed.platform) {
+    case 'youtube':
+      return `<iframe height="315" src="https://www.youtube.com/embed/${parsed.id}?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    case 'spotify': {
+      const type = parsed.type || 'track';
+      const height = type === 'track' ? 152 : 352;
+      return `<iframe height="${height}" src="https://open.spotify.com/embed/${type}/${parsed.id}?utm_source=generator&autoplay=1" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+    }
+    case 'soundcloud': {
+      const encodedUrl = encodeURIComponent(parsed.id);
+      return `<iframe height="166" scrolling="no" src="https://w.soundcloud.com/player/?url=${encodedUrl}&color=%23c8a96e&auto_play=true&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false" allow="autoplay"></iframe>`;
+    }
+    default:
+      return null;
+  }
+}
 
 function stopOtherIframes(exceptIndex) {
   for (let j = 0; j < totalTracks; j++) {
@@ -252,10 +271,24 @@ function stopOtherIframes(exceptIndex) {
     if (!block) continue;
     const iframe = block.querySelector('iframe');
     if (iframe) {
-      // reset src to stop playback
       const src = iframe.src;
       iframe.src = '';
       iframe.src = src;
+    }
+  }
+
+  // if autoplay is on, reload the active iframe with autoplay param
+  if (autoplay && activeParsedList[exceptIndex]) {
+    const block = document.getElementById(`block-${exceptIndex}`);
+    if (block) {
+      const iframe = block.querySelector('iframe');
+      const autoHtml = buildAutoplayEmbedHtml(activeParsedList[exceptIndex]);
+      if (iframe && autoHtml) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = autoHtml;
+        const newIframe = tmp.firstElementChild;
+        iframe.replaceWith(newIframe);
+      }
     }
   }
 }
@@ -302,6 +335,13 @@ function initNavBar(parsedList) {
   document.getElementById('now-playing-bar').classList.remove('hidden');
   setActiveTrack(0);
 }
+
+document.getElementById('autoplay-btn').addEventListener('click', () => {
+  autoplay = !autoplay;
+  const btn = document.getElementById('autoplay-btn');
+  btn.textContent = `autoplay: ${autoplay ? 'on' : 'off'}`;
+  btn.classList.toggle('on', autoplay);
+});
 
 document.getElementById('prev-btn').addEventListener('click', () => {
   if (activeIndex > 0) setActiveTrack(activeIndex - 1);
