@@ -392,6 +392,22 @@ button {
   text-overflow: ellipsis;
 }
 
+#nav-heart {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 1.1rem;
+  border: 1px solid var(--accent-dim);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius);
+  transition: background 0.2s, color 0.2s;
+  line-height: 1;
+}
+
+#nav-heart:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 #prev-btn, #next-btn {
   background: transparent;
   border: 1px solid var(--border);

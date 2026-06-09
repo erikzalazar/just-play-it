@@ -171,8 +171,8 @@ function renderPlayers(parsedList) {
     playersEl.appendChild(block);
   });
 
-  const validCount = parsedList.filter(p => p && p.platform !== 'unknown' && buildEmbedHtml(p)).length;
-  if (validCount > 0) initNavBar(validCount);
+  const validList = parsedList.filter(p => p && p.platform !== 'unknown' && buildEmbedHtml(p));
+  if (validList.length > 0) initNavBar(validList);
 }
 
 // --- Shareable URL encoding ---
@@ -236,9 +236,24 @@ function setupCopyButton(longUrl) {
 
 let activeIndex = 0;
 let totalTracks = 0;
+let activeParsedList = [];
+
+function stopOtherIframes(exceptIndex) {
+  for (let j = 0; j < totalTracks; j++) {
+    if (j === exceptIndex) continue;
+    const block = document.getElementById(`block-${j}`);
+    if (!block) continue;
+    const iframe = block.querySelector('iframe');
+    if (iframe) {
+      // reset src to stop playback
+      const src = iframe.src;
+      iframe.src = '';
+      iframe.src = src;
+    }
+  }
+}
 
 function setActiveTrack(i) {
-  // remove previous active
   const prevBlock = document.getElementById(`block-${activeIndex}`);
   const prevRow = document.getElementById(`trow-${activeIndex}`);
   if (prevBlock) prevBlock.classList.remove('active');
@@ -260,12 +275,22 @@ function setActiveTrack(i) {
   document.getElementById('now-playing-label').textContent =
     `${String(i + 1).padStart(2, '0')}  ${label}`;
 
+  // update heart link
+  const heartEl = document.getElementById('nav-heart');
+  if (heartEl && activeParsedList[i]) {
+    heartEl.href = activeParsedList[i].original;
+    heartEl.title = `open on ${activeParsedList[i].platform} to save`;
+  }
+
   document.getElementById('prev-btn').disabled = i === 0;
   document.getElementById('next-btn').disabled = i === totalTracks - 1;
+
+  stopOtherIframes(i);
 }
 
-function initNavBar(count) {
-  totalTracks = count;
+function initNavBar(parsedList) {
+  activeParsedList = parsedList;
+  totalTracks = parsedList.length;
   activeIndex = 0;
   document.getElementById('now-playing-bar').classList.remove('hidden');
   setActiveTrack(0);
