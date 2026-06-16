@@ -255,6 +255,17 @@ let totalTracks = 0;
 let activeParsedList = [];
 let autoplay = false;
 
+function showSpotifyNotice(trackIndex) {
+  const labelEl = document.getElementById('now-playing-label');
+  const metaEl = document.getElementById(`tmeta-${trackIndex}`);
+  const trackLabel = metaEl ? metaEl.textContent : `track ${String(trackIndex + 1).padStart(2, '0')}`;
+  const original = labelEl.textContent;
+  labelEl.textContent = '↑ press play on spotify';
+  setTimeout(() => {
+    labelEl.textContent = original || `${String(trackIndex + 1).padStart(2, '0')}  ${trackLabel}`;
+  }, 4000);
+}
+
 function buildAutoplayEmbedHtml(parsed) {
   switch (parsed.platform) {
     case 'youtube':
@@ -306,11 +317,7 @@ function autoplaylframe(index) {
   } else if (parsed.platform === 'soundcloud') {
     try { SC.Widget(iframe).play(); } catch {}
   } else if (parsed.platform === 'spotify') {
-    // Spotify needs a full reload with autoplay=1 — no postMessage play API
-    const type = parsed.type || 'track';
-    const height = type === 'track' ? 152 : 352;
-    iframe.src = `https://open.spotify.com/embed/${type}/${parsed.id}?utm_source=generator&autoplay=1`;
-    iframe.height = height;
+    showSpotifyNotice(index);
   }
 }
 
