@@ -2,7 +2,7 @@
 
 function extractUrls(text) {
   const urlRegex = /https?:\/\/[^\s"'<>)]+/g;
-  return [...new Set(text.match(urlRegex) || [])];
+  return [...new Set((text || '').match(urlRegex) || [])];
 }
 
 // --- Platform detection ---
@@ -166,6 +166,13 @@ function renderPlayers(parsedList) {
         document.getElementById('now-playing-label').textContent =
           `${String(i + 1).padStart(2, '0')}  ${label}`;
       }
+    }).catch(() => {
+      // on failure show URL-based fallback instead of staying on "loading..."
+      const tEl = document.getElementById(`tmeta-${i}`);
+      const pEl = document.getElementById(`pmeta-${i}`);
+      const html = labelHtml(null, parsed.platform, parsed.original);
+      if (tEl) tEl.innerHTML = html;
+      if (pEl) pEl.innerHTML = html;
     });
   });
 
@@ -190,10 +197,12 @@ function encodeLinks(urls) {
 
 function decodeLinks(encoded) {
   try {
-    // support both new (lz-string) and old (btoa) format
     const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
-    if (decompressed) return decompressed.split('\n').filter(Boolean);
-    return decodeURIComponent(escape(atob(encoded))).split('\n').filter(Boolean);
+    if (decompressed && decompressed.length > 0) return decompressed.split('\n').filter(Boolean);
+    // fallback for old btoa-encoded links
+    const legacy = decodeURIComponent(escape(atob(encoded)));
+    if (legacy && legacy.length > 0) return legacy.split('\n').filter(Boolean);
+    return [];
   } catch {
     return [];
   }
@@ -268,7 +277,7 @@ function stopIframe(index) {
   const block = document.getElementById(`block-${index}`);
   if (!block) return;
   const iframe = block.querySelector('iframe');
-  if (!iframe) return;
+  if (!iframe || !iframe.src) return;
 
   if (iframe.src.includes('soundcloud.com')) {
     try { SC.Widget(iframe).pause(); } catch {}
@@ -431,6 +440,8 @@ document.getElementById('share-all-btn').addEventListener('click', async () => {
         btn.textContent = 'share this playlist';
         btn.classList.remove('copied');
       }, 2000);
+    }).catch(() => {
+      btn.textContent = 'share this playlist';
     });
   }
 });
@@ -453,6 +464,9 @@ document.getElementById('copy-list-btn').addEventListener('click', () => {
       btn.textContent = 'copy tracklist';
       btn.classList.remove('copied');
     }, 2000);
+  }).catch(() => {
+    const btn = document.getElementById('copy-list-btn');
+    btn.textContent = 'copy tracklist';
   });
 });
 
