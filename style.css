@@ -383,6 +383,22 @@ button {
   display: none;
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.spotify-notice {
+  color: #1db954;
+  animation: pulse 1.2s ease-in-out infinite;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+}
+
+#now-playing-label.notice-active {
+  min-width: 220px;
+}
+
 /* --- now playing bar --- */
 
 #now-playing-bar {

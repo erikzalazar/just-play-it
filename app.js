@@ -259,10 +259,12 @@ function showSpotifyNotice(trackIndex) {
   const labelEl = document.getElementById('now-playing-label');
   const metaEl = document.getElementById(`tmeta-${trackIndex}`);
   const trackLabel = metaEl ? metaEl.textContent : `track ${String(trackIndex + 1).padStart(2, '0')}`;
-  const original = labelEl.textContent;
-  labelEl.textContent = '↑ press play on spotify';
+  const restored = `${String(trackIndex + 1).padStart(2, '0')}  ${trackLabel}`;
+  labelEl.innerHTML = '<span class="spotify-notice">↑ press play on spotify</span>';
+  labelEl.classList.add('notice-active');
   setTimeout(() => {
-    labelEl.textContent = original || `${String(trackIndex + 1).padStart(2, '0')}  ${trackLabel}`;
+    labelEl.textContent = restored;
+    labelEl.classList.remove('notice-active');
   }, 4000);
 }
 
@@ -386,16 +388,18 @@ document.getElementById('next-btn').addEventListener('click', () => {
 
 // detect when user clicks inside an iframe and update nav bar
 window.addEventListener('blur', () => {
-  const focused = document.activeElement;
-  if (!focused || focused.tagName !== 'IFRAME') return;
-  // find which block this iframe belongs to
-  for (let j = 0; j < totalTracks; j++) {
-    const block = document.getElementById(`block-${j}`);
-    if (block && block.contains(focused) && j !== activeIndex) {
-      setActiveTrack(j);
-      break;
+  // only act if focus moved to an iframe (user clicked inside a player)
+  setTimeout(() => {
+    const focused = document.activeElement;
+    if (!focused || focused.tagName !== 'IFRAME') return;
+    for (let j = 0; j < totalTracks; j++) {
+      const block = document.getElementById(`block-${j}`);
+      if (block && block.contains(focused) && j !== activeIndex) {
+        setActiveTrack(j);
+        break;
+      }
     }
-  }
+  }, 0);
 });
 
 // --- View switching ---
